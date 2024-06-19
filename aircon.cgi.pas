@@ -145,6 +145,7 @@ var
    edt	   : array[tepc] of uint8;
    epcset  : set of tepc;
    st	   : string;
+   vl	   : uint8;
 
 begin
    if fpsendto (sh, @sndbuf, sizeof (sndbuf), 0, @sa, sizeof (sa)) = -1 then
@@ -242,16 +243,18 @@ begin
    end;
    if EPC_SET_TEMP_VALUE in epcset then begin
       st := '$' + hexstr (edt[EPC_SET_TEMP_VALUE], 2);
+      vl := 25;
       if edt[EPC_SET_TEMP_VALUE] = $FD then begin
 	 st := '-';
       end else if edt[EPC_SET_TEMP_VALUE] <= 50 then begin
 	 str (edt[EPC_SET_TEMP_VALUE], st);
 	 st := st + '℃';
+	 vl := edt[EPC_SET_TEMP_VALUE];
       end;
       write_tr (epcname[EPC_SET_TEMP_VALUE], st, 'tv');
       write_radio ('tv', '0', '');
       write ('変更する: <input type="number" name="tvv" value="',
-	     edt[EPC_SET_TEMP_VALUE], '" id="tvv" max="50" min="0" step="1">');
+	     vl, '" id="tvv" max="50" min="0" step="1">');
       write_radio_close;
       write_tr_close;
    end;
