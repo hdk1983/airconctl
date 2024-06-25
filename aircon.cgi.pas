@@ -41,9 +41,9 @@ const
    echonetlite_port = 3610;
 
 const
-   epccode : array[EPC_OPERATION_STATUS..EPC_AIR_FLOW_DIR_VERT] of uint8
+   epccode : array[tepc] of uint8
    = ($80, $8F, $B0, $B3, $BA, $BB, $BE, $A0, $A1, $A4);
-   epcname : array[EPC_OPERATION_STATUS..EPC_AIR_FLOW_DIR_VERT] of string
+   epcname : array[tepc] of string
    = ('電源', '節電動作', '運転モード', '温度設定', '室内相対湿度', '室内温度',
       '外気温度', '風量', '風向自動', '風向上下');
 
