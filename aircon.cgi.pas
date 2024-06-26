@@ -170,6 +170,26 @@ begin
    end;
 end;
 
+function epc_to_epctype (epc : uint8) : tepc;
+var
+   i	 : tepc;
+   found : boolean;
+begin
+   i := low (tepc);
+   found := false;
+   repeat
+      if epccode[i] = epc then begin
+	 found := true;
+      end else if i = high (tepc) then begin
+	 show_error ('エラー: 不正な EPC $' + hexstr (epc, 2) +
+		     ' の応答を受信しました。', false);
+      end else begin
+	 i := succ (i);
+      end;
+   until found;
+   epc_to_epctype := i;
+end;
+
 procedure show_status (sh : longint; sa : tinetsockaddr);
 const
    sndbuf : array[1..32] of uint8 = ($10, {EHD1}
@@ -249,21 +269,7 @@ begin
 			' について不正な長さ $' +
 			hexstr (rcvbuf[offset + 1], 2) +
 			' の応答を受信しました。', false);
-	 case rcvbuf[offset] of		   {EPC i}
-	   $80 : epctype := EPC_OPERATION_STATUS;
-	   $8F : epctype := EPC_POWER_SAVING;
-	   $B0 : epctype := EPC_OPERATION_MODE;
-	   $B3 : epctype := EPC_SET_TEMP_VALUE;
-	   $BA : epctype := EPC_MEASURED_HUMIDITY;
-	   $BB : epctype := EPC_MEASURED_ROOM_TEMP;
-	   $BE : epctype := EPC_MEASURED_OUT_TEMP;
-	   $A0 : epctype := EPC_AIR_FLOW_RATE;
-	   $A1 : epctype := EPC_AIR_FLOW_DIR_AUTO;
-	   $A4 : epctype := EPC_AIR_FLOW_DIR_VERT;
-	 else
-	    show_error ('エラー: 不正な EPC $' + hexstr (rcvbuf[offset], 2) +
-			' の応答を受信しました。', false);
-	 end;
+	 epctype := epc_to_epctype (rcvbuf[offset]); {EPC i}
 	 edt[epctype] := rcvbuf[offset + 2];
 	 epcset := epcset + [epctype];
       end;
