@@ -21,9 +21,15 @@ program aircon_cgi;
 uses dos,sockets,sysutils;
 
 type
-   tqval = record
-	      mode, os, ps, om, tv, tvv, fr, fd	: string;
-	   end;
+   tq	= (Q_MODE,
+	   Q_OPERATION_STATUS,
+	   Q_POWER_SAVING,
+	   Q_OPERATION_MODE,
+	   Q_SET_TEMP,
+	   Q_SET_TEMP_VALUE,
+	   Q_AIR_FLOW_RATE,
+	   Q_AIR_FLOW_DIR);
+   tqv = array[tq] of string;
    tepc	= (EPC_OPERATION_STATUS,
 	   EPC_POWER_SAVING,
 	   EPC_OPERATION_MODE,
@@ -36,9 +42,17 @@ type
 	   EPC_AIR_FLOW_DIR_VERT);
 
 const
-   header	    = '<!DOCTYPE html><head><title>エアコン制御プログラム</title></head><body>';
-   footer	    = '</body>';
-   echonetlite_port = 3610;
+   header	       = '<!DOCTYPE html><head><title>エアコン制御プログラム</title></head><body>';
+   footer	       = '</body>';
+   echonetlite_port    = 3610;
+   qs_mode	       = 'mode';
+   qs_operation_status = 'os';
+   qs_power_saving     = 'ps';
+   qs_operation_mode   = 'om';
+   qs_set_temp	       = 'tv';
+   qs_set_temp_value   = 'tvv';
+   qs_air_flow_rate    = 'fr';
+   qs_air_flow_dir     = 'fd';
 
 const
    epccode : array[tepc] of uint8
@@ -206,9 +220,9 @@ begin
 	$30 : st := 'ON';
 	$31 : st := 'OFF';
       end;
-      write_tr (epcname[EPC_OPERATION_STATUS], st, 'os');
-      write_radio ('os', '1', ''); write ('OFF'); write_radio_close;
-      write_radio ('os', '0', ''); write ('ON'); write_radio_close;
+      write_tr (epcname[EPC_OPERATION_STATUS], st, qs_operation_status);
+      write_radio (qs_operation_status, '1', ''); write ('OFF'); write_radio_close;
+      write_radio (qs_operation_status, '0', ''); write ('ON'); write_radio_close;
       write_tr_close;
    end;
    if EPC_POWER_SAVING in epcset then begin
@@ -217,9 +231,9 @@ begin
 	$41 : st := '節電';
 	$42 : st := '通常';
       end;
-      write_tr (epcname[EPC_POWER_SAVING], st, 'ps');
-      write_radio ('ps', 'B', ''); write ('通常'); write_radio_close;
-      write_radio ('ps', 'A', ''); write ('節電'); write_radio_close;
+      write_tr (epcname[EPC_POWER_SAVING], st, qs_power_saving);
+      write_radio (qs_power_saving, 'B', ''); write ('通常'); write_radio_close;
+      write_radio (qs_power_saving, 'A', ''); write ('節電'); write_radio_close;
       write_tr_close;
    end;
    if EPC_OPERATION_MODE in epcset then begin
@@ -232,13 +246,13 @@ begin
 	$45 : st := '送風';
 	$40 : st := 'その他';
       end;
-      write_tr (epcname[EPC_OPERATION_MODE], st, 'om');
-      write_radio ('om', 'A', ''); write ('自動'); write_radio_close;
-      write_radio ('om', 'B', ''); write ('冷房'); write_radio_close;
-      write_radio ('om', 'C', ''); write ('暖房'); write_radio_close;
-      write_radio ('om', 'D', ''); write ('除湿'); write_radio_close;
-      write_radio ('om', 'E', ''); write ('送風'); write_radio_close;
-      write_radio ('om', '0', ''); write ('その他'); write_radio_close;
+      write_tr (epcname[EPC_OPERATION_MODE], st, qs_operation_mode);
+      write_radio (qs_operation_mode, 'A', ''); write ('自動'); write_radio_close;
+      write_radio (qs_operation_mode, 'B', ''); write ('冷房'); write_radio_close;
+      write_radio (qs_operation_mode, 'C', ''); write ('暖房'); write_radio_close;
+      write_radio (qs_operation_mode, 'D', ''); write ('除湿'); write_radio_close;
+      write_radio (qs_operation_mode, 'E', ''); write ('送風'); write_radio_close;
+      write_radio (qs_operation_mode, '0', ''); write ('その他'); write_radio_close;
       write_tr_close;
    end;
    if EPC_SET_TEMP_VALUE in epcset then begin
@@ -251,10 +265,10 @@ begin
 	 st := st + '℃';
 	 vl := edt[EPC_SET_TEMP_VALUE];
       end;
-      write_tr (epcname[EPC_SET_TEMP_VALUE], st, 'tv');
-      write_radio ('tv', '0', '');
+      write_tr (epcname[EPC_SET_TEMP_VALUE], st, qs_set_temp);
+      write_radio (qs_set_temp, '0', '');
       write ('変更する: <input type="number" name="tvv" value="',
-	     vl, '" id="tvv" max="50" min="0" step="1">');
+	     vl, '" id="', qs_set_temp_value, '" max="50" min="0" step="1">');
       write_radio_close;
       write_tr_close;
    end;
@@ -312,16 +326,16 @@ begin
 	$37 : st := '7/8';
 	$38 : st := '8/8';
       end;
-      write_tr (epcname[EPC_AIR_FLOW_RATE], st, 'fr');
-      write_radio ('fr', 'A', ''); write ('自動'); write_radio_close;
-      write_radio ('fr', '1', ''); write ('1'); write_radio_close;
-      write_radio ('fr', '2', ''); write ('2'); write_radio_close;
-      write_radio ('fr', '3', ''); write ('3'); write_radio_close;
-      write_radio ('fr', '4', ''); write ('4'); write_radio_close;
-      write_radio ('fr', '5', ''); write ('5'); write_radio_close;
-      write_radio ('fr', '6', ''); write ('6'); write_radio_close;
-      write_radio ('fr', '7', ''); write ('7'); write_radio_close;
-      write_radio ('fr', '8', ''); write ('8'); write_radio_close;
+      write_tr (epcname[EPC_AIR_FLOW_RATE], st, qs_air_flow_rate);
+      write_radio (qs_air_flow_rate, 'A', ''); write ('自動'); write_radio_close;
+      write_radio (qs_air_flow_rate, '1', ''); write ('1'); write_radio_close;
+      write_radio (qs_air_flow_rate, '2', ''); write ('2'); write_radio_close;
+      write_radio (qs_air_flow_rate, '3', ''); write ('3'); write_radio_close;
+      write_radio (qs_air_flow_rate, '4', ''); write ('4'); write_radio_close;
+      write_radio (qs_air_flow_rate, '5', ''); write ('5'); write_radio_close;
+      write_radio (qs_air_flow_rate, '6', ''); write ('6'); write_radio_close;
+      write_radio (qs_air_flow_rate, '7', ''); write ('7'); write_radio_close;
+      write_radio (qs_air_flow_rate, '8', ''); write ('8'); write_radio_close;
       write_tr_close;
    end;
    if (EPC_AIR_FLOW_DIR_AUTO in epcset) and (EPC_AIR_FLOW_DIR_VERT in epcset) then begin
@@ -337,13 +351,13 @@ begin
 	   $45 : st := '下中';
 	 end;
       end;
-      write_tr ('風向', st, 'fd');
-      write_radio ('fd', '0', ''); write ('自動'); write_radio_close;
-      write_radio ('fd', 'A', ''); write ('上'); write_radio_close;
-      write_radio ('fd', 'D', ''); write ('上中'); write_radio_close;
-      write_radio ('fd', 'C', ''); write ('中'); write_radio_close;
-      write_radio ('fd', 'E', ''); write ('下中'); write_radio_close;
-      write_radio ('fd', 'B', ''); write ('下'); write_radio_close;
+      write_tr ('風向', st, qs_air_flow_dir);
+      write_radio (qs_air_flow_dir, '0', ''); write ('自動'); write_radio_close;
+      write_radio (qs_air_flow_dir, 'A', ''); write ('上'); write_radio_close;
+      write_radio (qs_air_flow_dir, 'D', ''); write ('上中'); write_radio_close;
+      write_radio (qs_air_flow_dir, 'C', ''); write ('中'); write_radio_close;
+      write_radio (qs_air_flow_dir, 'E', ''); write ('下中'); write_radio_close;
+      write_radio (qs_air_flow_dir, 'B', ''); write ('下'); write_radio_close;
       write_tr_close;
    end;
    writeln ('</table>',
@@ -377,27 +391,27 @@ begin
    make_int_edt := chr (i);
 end;
 
-function make_prop (epc	: tepc; qv : tqval) : rawbytestring;
+function make_prop (epc	: tepc; qv : tqv) : rawbytestring;
 var
    edt : char;
 begin
    case epc of
-     EPC_OPERATION_STATUS  : edt := make_radio_edt (qv.os, '10', #$31#$30);
-     EPC_POWER_SAVING	   : edt := make_radio_edt (qv.ps, 'BA', #$42#$41);
-     EPC_OPERATION_MODE	   : edt := make_radio_edt (qv.om, 'ABCDE0',
+     EPC_OPERATION_STATUS  : edt := make_radio_edt (qv[Q_OPERATION_STATUS], '10', #$31#$30);
+     EPC_POWER_SAVING	   : edt := make_radio_edt (qv[Q_POWER_SAVING], 'BA', #$42#$41);
+     EPC_OPERATION_MODE	   : edt := make_radio_edt (qv[Q_OPERATION_MODE], 'ABCDE0',
 						    #$41#$42#$43#$44#$45#$40);
-     EPC_SET_TEMP_VALUE	   : edt := make_int_edt (qv.tvv, 0, 50);
-     EPC_AIR_FLOW_RATE	   : edt := make_radio_edt (qv.fr, 'A12345678',
+     EPC_SET_TEMP_VALUE	   : edt := make_int_edt (qv[Q_SET_TEMP_VALUE], 0, 50);
+     EPC_AIR_FLOW_RATE	   : edt := make_radio_edt (qv[Q_AIR_FLOW_RATE], 'A12345678',
 						    #$41#$31#$32#$33#$34 +
 						    #$35#$36#$37#$38);
-     EPC_AIR_FLOW_DIR_AUTO : edt := make_radio_edt (qv.fd, '0', #$43);
-     EPC_AIR_FLOW_DIR_VERT : edt := make_radio_edt (qv.fd, 'ABCDE',
+     EPC_AIR_FLOW_DIR_AUTO : edt := make_radio_edt (qv[Q_AIR_FLOW_DIR], '0', #$43);
+     EPC_AIR_FLOW_DIR_VERT : edt := make_radio_edt (qv[Q_AIR_FLOW_DIR], 'ABCDE',
 						    #$41#$42#$43#$44#$45);
    end;
    make_prop := chr (epccode[epc]) {EPC} + #$01 {PDC} + edt;
 end;
 
-procedure mode_set (sh : longint; sa : tinetsockaddr; qv : tqval);
+procedure mode_set (sh : longint; sa : tinetsockaddr; qv : tqv);
 var
    epcset  : set of tepc;
    epc	   : tepc;
@@ -409,13 +423,18 @@ var
    success : boolean;
 begin
    epcset := [];
-   if qv.os <> 'keep' then epcset := epcset + [EPC_OPERATION_STATUS];
-   if qv.ps <> 'keep' then epcset := epcset + [EPC_POWER_SAVING];
-   if qv.om <> 'keep' then epcset := epcset + [EPC_OPERATION_MODE];
-   if qv.tv <> 'keep' then epcset := epcset + [EPC_SET_TEMP_VALUE];
-   if qv.fr <> 'keep' then epcset := epcset + [EPC_AIR_FLOW_RATE];
-   if qv.fd <> 'keep' then begin
-      if qv.fd = '0' then begin
+   if qv[Q_OPERATION_STATUS] <> 'keep' then
+      epcset := epcset + [EPC_OPERATION_STATUS];
+   if qv[Q_POWER_SAVING] <> 'keep' then
+      epcset := epcset + [EPC_POWER_SAVING];
+   if qv[Q_OPERATION_MODE] <> 'keep' then
+      epcset := epcset + [EPC_OPERATION_MODE];
+   if qv[Q_SET_TEMP] <> 'keep' then
+      epcset := epcset + [EPC_SET_TEMP_VALUE];
+   if qv[Q_AIR_FLOW_RATE] <> 'keep' then
+      epcset := epcset + [EPC_AIR_FLOW_RATE];
+   if qv[Q_AIR_FLOW_DIR] <> 'keep' then begin
+      if qv[Q_AIR_FLOW_DIR] = '0' then begin
 	 epcset := epcset + [EPC_AIR_FLOW_DIR_AUTO];
       end else begin
 	 epcset := epcset + [EPC_AIR_FLOW_DIR_VERT];
@@ -488,25 +507,18 @@ begin
    get_addr_from_path_info := ret;
 end;
 
-function get_query_string : tqval;
+function get_query_string : tqv;
 var
    qs : string;
-   qv : tqval;
+   q  : tq;
+   qv : tqv;
    pe : 0..255;
    pa : 0..255;
    nm : string;
    vl : string;
 begin
-   with qv do begin
-      mode := '';
-      os := '';
-      ps := '';
-      om := '';
-      tv := '';
-      tvv := '';
-      fr := '';
-      fd := '';
-   end;
+   for q := low (qv) to high (qv) do
+      qv[q] := '';
    qs := getenv ('QUERY_STRING');
    {name1=value1&name2=value2形式の文字列を分解する。
    コピーだらけで遅いけど確実に。}
@@ -524,18 +536,19 @@ begin
 	 qs := '';
       end;
       case nm of
-	'mode' : qv.mode := vl;
-	'os'   : qv.os := vl;
-	'ps'   : qv.ps := vl;
-	'om'   : qv.om := vl;
-	'tv'   : qv.tv := vl;
-	'tvv'  : qv.tvv := vl;
-	'fr'   : qv.fr := vl;
-	'fd'   : qv.fd := vl;
+	qs_mode		    : q := Q_MODE;
+	qs_operation_status : q := Q_OPERATION_STATUS;
+	qs_power_saving	    : q := Q_POWER_SAVING;
+	qs_operation_mode   : q := Q_OPERATION_MODE;
+	qs_set_temp	    : q := Q_SET_TEMP;
+	qs_set_temp_value   : q := Q_SET_TEMP_VALUE;
+	qs_air_flow_rate    : q := Q_AIR_FLOW_RATE;
+	qs_air_flow_dir	    : q := Q_AIR_FLOW_DIR;
       else
 	 show_error ('エラー: QUERY_STRINGに不正な名前が指定されました。',
 		     false);
       end;
+      qv[q] := vl;
    end;
    get_query_string := qv;
 end;
@@ -544,7 +557,7 @@ procedure show_main (path_info : string);
 var
    sa : tinetsockaddr;
    sh : longint;
-   qv : tqval;
+   qv : tqv;
 begin
    if (path_info[1] <> '/') then
       show_error ('エラー: PATH_INFOが/で始まっていません。', true);
@@ -565,7 +578,7 @@ begin
    sa.sin_addr := get_addr_from_path_info (path_info);
 
    qv := get_query_string;
-   case qv.mode of
+   case qv[Q_MODE] of
      ''	   : show_status (sh, sa);
      'set' : mode_set (sh, sa, qv);
    else
