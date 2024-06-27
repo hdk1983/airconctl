@@ -18,7 +18,7 @@
  *)
 
 program aircon_cgi;
-uses dos,sockets,sysutils;
+uses dos,sockets,sysutils,baseunix;
 
 type
    tq	= (Q_MODE,
@@ -45,6 +45,7 @@ const
    header		  = '<!DOCTYPE html><head><title>エアコン制御プログラム</title></head><body>';
    footer		  = '</body>';
    echonetlite_port	  = 3610;
+   recv_timeout_ms	  = 5000;
    qs_mode		  = 'mode';
    qs_operation_status	  = 'os';
    qs_power_saving	  = 'ps';
@@ -190,6 +191,17 @@ begin
    epc_to_epctype := i;
 end;
 
+procedure wait_for_response (sh	: longint);
+var
+   fd : pollfd;
+begin
+   {データが届くまでタイムアウト付きで待つ}
+   fd.fd := sh;
+   fd.events := POLLIN;
+   if fppoll (@fd, 1, recv_timeout_ms) <> 1 then
+      show_error ('エラー: 受信がタイムアウトしました。', false);
+end;
+
 procedure show_status (sh : longint; sa : tinetsockaddr);
 const
    sndbuf : array[1..32] of uint8 = ($10, {EHD1}
@@ -248,6 +260,7 @@ var
 begin
    if fpsendto (sh, @sndbuf, sizeof (sndbuf), 0, @sa, sizeof (sa)) = -1 then
       show_error ('エラー: 送信できませんでした。', false);
+   wait_for_response (sh);
    rcvlen := fprecv (sh, @rcvbuf, sizeof (rcvbuf), 0);
    if rcvlen = -1 then
       show_error ('エラー: 受信できませんでした。', false);
@@ -485,6 +498,7 @@ begin
 		sizeof (sa)) = -1 then
       show_error ('エラー: 送信できませんでした。', false);
    setlength (rcvbuf, 255);
+   wait_for_response (sh);
    rcvlen := fprecv (sh, @rcvbuf[1], length (rcvbuf), 0);
    if rcvlen = -1 then
       show_error ('エラー: 受信できませんでした。', false);
