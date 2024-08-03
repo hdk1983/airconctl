@@ -291,7 +291,14 @@ begin
 	 break;
    end;
 
+   {JavaScriptは温度の数値変更時にradioを切り替える処理}
    writeln (header,
+	    '<script type="text/javascript">',
+	    'window.onload=function(){',
+	    'var i=document.getElementById("tvv"),',
+	    'j=document.getElementById("tv_0");',
+	    'if(i&&j)i.oninput=function(e){j.checked=true;};};',
+	    '</script>',
 	    '<form method="GET">',
 	    '<input type="hidden" name="mode" value="set">',
 	    '<p><input type="reset"></p>',
@@ -331,6 +338,7 @@ begin
 	 vl := edt[EPC_SET_TEMP_VALUE];
       end;
       write_tr (epcname[EPC_SET_TEMP_VALUE], st, qs_set_temp);
+      {数値変更時にradioを切り替えるのは別途JavaScriptで実施}
       write_radio (qs_set_temp, '0', '');
       write ('変更する: <input type="number" name="tvv" value="',
 	     vl, '" id="', qs_set_temp_value, '" max="50" min="0" step="1">');
