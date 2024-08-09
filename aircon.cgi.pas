@@ -143,7 +143,7 @@ begin
       end;
       st := copy (qn, qni1, qni2 - qni1);
    end;
-   write_tr (copy (qn, 1, qni0), st, qs);
+   write_tr (copy (qn, 1, pred (qni0)), st, qs);
    qni2 := qni0;
    for index := 1 to length (qvl) do begin
       qni1 := succ (qni2);
