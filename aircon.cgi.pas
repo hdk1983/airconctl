@@ -86,6 +86,8 @@ begin
       writeln (header, error,
 	       '<p>URLに/とIPアドレスをつけてアクセスしてください。</p>',
 	       '<p>付加する文字列の例: /192.168.1.2</p>',
+	       '<p>さらに/をつけてエアコン名称を指定できます。</p>',
+	       '<p>付加する文字列の例: /192.168.1.2/リビングのエアコン</p>',
 	       footer);
    end else begin
       writeln (header, error, footer);
@@ -202,7 +204,7 @@ begin
       show_error ('エラー: 受信がタイムアウトしました。', false);
 end;
 
-procedure show_status (sh : longint; sa : tinetsockaddr);
+procedure show_status (sh : longint; sa : tinetsockaddr; an : string);
 const
    sndbuf : array[1..32] of uint8 = ($10, {EHD1}
 				     $81, {EHD2}
@@ -298,8 +300,10 @@ begin
 	    'var i=document.getElementById("tvv"),',
 	    'j=document.getElementById("tv_0");',
 	    'if(i&&j)i.oninput=function(e){j.checked=true;};};',
-	    '</script>',
-	    '<form method="GET">',
+	    '</script>');
+   if an <> '' then
+      writeln ('<p>エアコン名称: ', an, '</p>');
+   writeln ('<form method="GET">',
 	    '<input type="hidden" name="mode" value="set">',
 	    '<p><input type="reset"></p>',
 	    '<table>',
@@ -464,7 +468,7 @@ begin
    make_prop := chr (epccode[epc]) {EPC} + #$01 {PDC} + edt;
 end;
 
-procedure mode_set (sh : longint; sa : tinetsockaddr; qv : tqv);
+procedure mode_set (sh : longint; sa : tinetsockaddr; qv : tqv; an : string);
 var
    epcset  : set of tepc;
    epc	   : tepc;
@@ -512,6 +516,8 @@ begin
       show_error ('エラー: 受信できませんでした。', false);
    setlength (rcvbuf, rcvlen);
    writeln (header);
+   if an <> '' then
+      writeln ('<p>エアコン名称: ', an, '</p>');
    success := true;
    write ('<p>設定項目名:');
    for epc in epcset do
@@ -612,9 +618,21 @@ var
    sa : tinetsockaddr;
    sh : longint;
    qv : tqv;
+   an : string;
+   ps : integer;
 begin
    if (path_info[1] <> '/') then
       show_error ('エラー: PATH_INFOが/で始まっていません。', true);
+
+   {エアコン名称を取得する}
+   ps := pos ('/', path_info, 2);
+   an := '';
+   if ps > 0 then begin
+      an := copy (path_info, ps + 1);
+      an := stringreplace (an, '<', '&lt;', [rfreplaceall]);
+      an := stringreplace (an, '>', '&gt;', [rfreplaceall]);
+      setlength (path_info, ps - 1);
+   end;
 
    {ソケットを準備する}
    sh := fpsocket (AF_INET, SOCK_DGRAM, 0);
@@ -633,8 +651,8 @@ begin
 
    qv := get_query_string;
    case qv[Q_MODE] of
-     ''	   : show_status (sh, sa);
-     'set' : mode_set (sh, sa, qv);
+     ''	   : show_status (sh, sa, an);
+     'set' : mode_set (sh, sa, qv, an);
    else
       show_error ('エラー: 不正なmodeが指定されました。', false);
    end;
