@@ -42,7 +42,7 @@ type
 	   EPC_AIR_FLOW_DIR_VERT);
 
 const
-   header		  = '<!DOCTYPE html><head><title>エアコン制御プログラム</title><style>input[type="radio"]:checked+label{font-weight:bold;}</style></head><body>';
+   header		  = '<!DOCTYPE html><head><title>エアコン制御プログラム</title><meta name="viewport" content="width=640"><style>input[type="radio"]:checked+label{font-weight:bold;}</style></head><body>';
    footer		  = '</body>';
    echonetlite_port	  = 3610;
    recv_timeout_ms	  = 5000;
